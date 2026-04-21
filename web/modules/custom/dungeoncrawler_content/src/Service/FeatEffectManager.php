@@ -810,6 +810,24 @@ class FeatEffectManager {
           $effects['applied_feats'][] = $feat_id;
           break;
 
+        case 'ceaseless-shadows':
+          $effects['derived_adjustments']['flags']['ceaseless_shadows_no_cover_req'] = TRUE;
+          $effects['conditional_modifiers']['movement'][] = [
+            'id' => 'ceaseless-shadows',
+            'rule' => 'hide_sneak_no_cover_requirement',
+            'context' => 'Hide and Sneak',
+          ];
+          $effects['conditional_modifiers']['movement'][] = [
+            'id' => 'ceaseless-shadows-cover-upgrade',
+            'rule' => 'creature_cover_upgrade',
+            'lesser_to_full' => TRUE,
+            'full_to_greater' => TRUE,
+            'context' => 'Creature-based cover only',
+          ];
+          $effects['notes'][] = 'Ceaseless Shadows: Can Hide and Sneak without cover or concealment. Creatures grant upgraded cover (lesser→full, full→greater).';
+          $effects['applied_feats'][] = $feat_id;
+          break;
+
         case 'general-training':
           $this->addSelectionGrant(
             $effects,

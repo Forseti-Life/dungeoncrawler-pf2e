@@ -950,6 +950,9 @@ class CharacterManager {
       ['id' => 'halfling-resolve', 'name' => 'Halfling Resolve', 'level' => 9, 'traits' => ['Halfling'], 'prerequisites' => '',
         'benefit' => 'When you succeed on a saving throw against an emotion effect, treat it as a critical success. If you also have the Gutsy Halfling heritage, critical failures on emotion saving throws become failures instead.',
         'special' => ['save_success_upgrade' => ['effect_type' => 'emotion', 'success_to_crit' => TRUE], 'gutsy_resolve_interaction' => TRUE]],
+      ['id' => 'ceaseless-shadows', 'name' => 'Ceaseless Shadows', 'level' => 13, 'traits' => ['Halfling'], 'prerequisites' => 'Distracting Shadows',
+        'prerequisite_distracting_shadows' => TRUE,
+        'benefit' => 'You excel at going unnoticed, especially among a crowd. You no longer need to have cover or be concealed to Hide or Sneak. If you would have lesser cover from creatures, you gain cover and can Take Cover, and if you would have cover from creatures, you gain greater cover.'],
     ],
     'Catfolk' => [
       ['id' => 'catfolk-lore', 'name' => 'Catfolk Lore', 'level' => 1, 'traits' => ['Catfolk'], 'prerequisites' => '',

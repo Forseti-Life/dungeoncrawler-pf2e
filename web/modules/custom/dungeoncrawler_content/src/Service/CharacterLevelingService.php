@@ -816,6 +816,15 @@ class CharacterLevelingService {
       }
     }
 
+    // Distracting Shadows prerequisite (e.g. Ceaseless Shadows).
+    if (!empty($feat['prerequisite_distracting_shadows'])) {
+      if (!$this->characterHasDistractingShadows($char_data)) {
+        throw new \InvalidArgumentException(
+          "Feat '{$feat_id}' requires Distracting Shadows", 400
+        );
+      }
+    }
+
     return $feat;
   }
 
@@ -868,6 +877,14 @@ class CharacterLevelingService {
   private function characterHasGoblinWeaponFamiliarity(array $char_data): bool {
     $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
     return in_array('goblin-weapon-familiarity', $owned_ids, TRUE);
+  }
+
+  /**
+   * Returns TRUE if the character has Distracting Shadows.
+   */
+  private function characterHasDistractingShadows(array $char_data): bool {
+    $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
+    return in_array('distracting-shadows', $owned_ids, TRUE);
   }
 
 }
