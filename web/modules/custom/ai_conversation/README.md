@@ -1,921 +1,913 @@
-# AI Conversation Module
+# AI Conversation
 
-**Last Updated:** February 18, 2026
+**Conversational AI interface for Pathfinder 2E campaigns, powered by Forseti the Game Master using AWS Bedrock Claude 3.5 Sonnet with intelligent rolling summaries.**
 
-# AI Conversation Module
+## Badges
+
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+![Drupal Version](https://img.shields.io/badge/Drupal-9%20%7C%2010%20%7C%2011-blue)
+![Status: Stable](https://img.shields.io/badge/Status-Stable-brightgreen)
 
 ## Overview
 
-The AI Conversation module provides a sophisticated conversational AI interface powered by AWS Bedrock and Claude 3.5 Sonnet. It features an intelligent **rolling summary system** that allows for unlimited conversation length while maintaining context efficiency and managing token costs.
+The AI Conversation module provides a sophisticated conversational AI interface for **Pathfinder 2E campaigns**, powered by **Forseti the Game Master** persona and **AWS Bedrock Claude 3.5 Sonnet**. It features an intelligent **rolling summary system** that allows for unlimited conversation length while maintaining narrative context and managing token costs. Each campaign conversation is stored as a persistent Drupal node, enabling multi-session campaigns, quest tracking, character interaction history, and full adventure audit trails. Perfect for collaborative storytelling, quest management, combat orchestration, and immersive roleplay experiences.
+
+## Features
+
+### 🎭 Forseti Game Master Persona
+- **Immersive Narrative Voice**: All player-facing text uses D&D/Pathfinder terminology
+- **Campaign Context Aware**: Maintains quest/campaign storyline across sessions
+- **Character Integration**: Remember PC names, backgrounds, and relationships
+- **World Building**: Rich descriptions of locations, NPCs, and encounters
+- **Tone Control**: Adjust from humorous to serious, tactical to narrative-driven
+
+### 🤖 AWS Bedrock Integration
+- **Primary Model**: Claude 3.5 Sonnet (anthropic.claude-3-5-sonnet-20240620-v1:0)
+- **Region**: us-west-2
+- **Authentication**: Environment variables or IAM roles (no hardcoded credentials)
+- **Fallback Models**: Claude 3 Haiku and Claude 3 Opus support
+- **Error Handling**: Automatic retry with exponential backoff
+- **Cost Tracking**: Per-message token accounting
+
+### 🔄 Intelligent Rolling Summary System
+- **Automatic Summarization**: Older messages summarized when conversation exceeds limits
+- **Recent Message Retention**: Keeps the most recent N messages (default: 20) in full detail
+- **Context Optimization**: Summary + recent messages provide optimal narrative flow
+- **Configurable Frequency**: Summary updates every N messages (default: 10)
+- **Token Management**: Prevents context window overflow in epic multi-session campaigns
+- **Narrative Coherence**: Summaries preserve plot hooks and character development
+
+### 💬 Real-time Chat Interface
+- **AJAX-powered Messaging**: Instant responses without page refreshes
+- **Live Statistics**: Real-time token count, message count, and session metrics
+- **CSRF Protection**: Secure message sending with token validation
+- **Access Control**: Players can only access their own campaign conversations
+- **Progressive Enhancement**: Works with JavaScript disabled
+- **Mobile Friendly**: Responsive design for tablets and phones
+
+### 📊 Advanced Analytics & Monitoring
+- **Campaign Statistics**: Session count, total playtime, quest progress
+- **Token Tracking**: Comprehensive input/output token accounting
+- **Combat Log**: Separate tracking for roll results and combat actions
+- **Character Tracking**: NPC interactions and relationship changes
+- **Debug Mode**: Detailed logging for troubleshooting
+
+### 🎯 Node-Centric Architecture
+- **Persistent Storage**: All campaign conversations stored as Drupal nodes
+- **Custom Content Type**: `ai_conversation` with specialized D&D fields
+- **Relationship Mapping**: Link to character sheets, quest logs, battle maps
+- **Permission Control**: Drupal's native access control for players and GMs
+- **Workflow Integration**: Compatible with campaign moderation workflows
+
+## Installation
+
+### Prerequisites
+- Drupal 9, 10, or 11
+- AWS Account with Bedrock access
+- IAM credentials or instance role with Bedrock permissions
+- Pathfinder 2E content modules (optional, for character integration)
+
+### Installation Steps
 
-For Dungeoncrawler, the assistant persona is configured as **Forseti, the Game Master**, with all player-facing chat copy and default prompt language aligned to that voice.
-
-## Complete Workflow
-
-### 🎯 **Node-Based Architecture**
-
-The AI Conversation module uses a **node-centric approach** where each conversation is stored as a Drupal content entity:
-
-1. **Create AI Conversation Node** → Each conversation is a `ai_conversation` content type node
-2. **Node as Storage Container** → All messages, settings, and metadata stored in node fields  
-3. **Chat Interface via Node** → Access chat at `/node/{nid}/chat`
-4. **Persistent Conversations** → Full conversation history maintained in the node
-
-### 📋 **Step-by-Step User Workflow**
-
-#### **Step 1: Create Conversation Node**
-1. Navigate to **Content → Add content → AI Conversation**
-2. **Required fields:**
-   - **Title:** Name your conversation (e.g., "Project Planning Discussion")
-   - **AI Model:** Select model (defaults to Claude 3.5 Sonnet)
-   - **Context:** Optional system prompt to guide AI behavior
-
-3. **Optional configuration:**
-   - Set custom system prompt for specialized conversations
-   - Choose different AI model if needed
-   - Add description or notes
-
-4. **Save the node** → This creates your conversation container
-
-#### **Step 2: Start Chatting**
-1. **Access chat interface:** Navigate to `/node/{nid}/chat` 
-  - Example: `https://dungeoncrawler.forseti.life/node/11/chat`
-   - Or click "Start Chat" link from node view page
-
-2. **Chat interface loads:**
-   - Message history area (empty for new conversations)
-   - Message input field with Send button
-   - Conversation statistics panel
-   - Loading indicators and controls
-
-#### **Step 3: Send Messages**
-1. **Type message** in the textarea input field
-2. **Send methods:**
-   - Click "Send" button
-   - Press Enter (Shift+Enter for new line)
-   
-3. **Message processing:**
-   - User message immediately appears in chat
-   - Loading indicator shows "AI is thinking..."
-   - AI response appears when complete
-   - Statistics update in real-time
-
-#### **Step 4: Ongoing Conversation**
-1. **Continue chatting** - all messages stored in the node
-2. **Statistics tracking** - monitor token usage and message count
-3. **Automatic summarization** - when conversation gets long
-4. **Persistent storage** - conversation preserved between sessions
-
-## Key Features
-
-### 🤖 **AWS Bedrock Integration**
-- **Primary Model:** Claude 3.5 Sonnet (anthropic.claude-3-5-sonnet-20240620-v1:0)
-- **Region:** us-west-2
-- **Authentication:** Environment variables or IAM roles (no hardcoded credentials)
-- **Fallback Models:** Claude 3 Haiku and Claude 3 Opus support
-
-### 🔄 **Intelligent Rolling Summary System**
-- **Automatic Summarization:** Older messages are automatically summarized when conversation exceeds configured limits
-- **Recent Message Retention:** Keeps the most recent N messages (default: 20) in full detail
-- **Context Optimization:** Summary + recent messages provide optimal context for AI responses
-- **Configurable Frequency:** Summary updates every N messages (default: 10)
-- **Token Management:** Prevents context window overflow in long conversations
-
-### 💬 **Real-time Chat Interface**
-- **AJAX-powered messaging:** No page refreshes required
-- **Live statistics:** Real-time token count, message count, and conversation metrics
-- **CSRF protection:** Secure message sending with token validation
-- **Access control:** Users can only access their own conversations
-- **Progressive enhancement:** Works with JavaScript disabled
-
-### 📊 **Advanced Analytics & Monitoring**
-- **Token tracking:** Comprehensive input/output token monitoring
-- **Conversation statistics:** Message counts, summary status, recent activity
-- **Debug mode:** Detailed logging for troubleshooting
-- **Performance metrics:** Response times and API usage tracking
-
-## Technical Architecture
-
-## Technical Architecture Deep Dive
-
-### 🏗️ **Node-Centric Storage System**
-
-The module creates a custom content type `ai_conversation` that serves as the complete storage container:
-
-#### **Content Type: `ai_conversation`**
-
-**Node URL Pattern:** `/node/{nid}/chat` for chat interface
-
-**Core Fields:**
-- **`field_messages`** (text_long, unlimited): JSON-encoded message objects
-  ```json
-  {
-    "role": "user|assistant", 
-    "content": "message text",
-    "timestamp": 1704067200
-  }
-  ```
-- **`field_ai_model`** (string): AI model identifier (defaults to Claude 3.5 Sonnet)
-- **`field_context`** (text_long): System prompt/conversation context
-
-**Rolling Summary Fields:**
-- **`field_conversation_summary`** (text_long): AI-generated summary of older messages
-- **`field_message_count`** (integer): Total message count for the conversation
-- **`field_summary_updated`** (timestamp): When summary was last regenerated
-- **`field_summary_message_count`** (integer): Counter for summary frequency logic
-- **`field_total_tokens`** (integer): Cumulative token usage tracking
-
-### 🔄 **Request/Response Flow**
-
-#### **Chat Interface Loading (`/node/{nid}/chat`)**
-1. **Route:** `ai_conversation.chat_interface`
-2. **Controller:** `ChatController::chatInterface()`
-3. **Access Control:** Node owner or admin only
-4. **Data Loading:**
-   - Load conversation node
-   - Extract recent messages for display
-   - Calculate conversation statistics
-   - Build render array with JavaScript settings
-
-#### **AJAX Message Sending (`/ai-conversation/send-message`)**
-1. **Route:** `ai_conversation.send_message` (POST with CSRF)
-2. **Controller:** `ChatController::sendMessage()`
-3. **Process Flow:**
-   ```php
-   // 1. Validate CSRF token and parameters
-   $token = $request->request->get('csrf_token');
-   $node_id = $request->request->get('node_id');
-   $message = $request->request->get('message');
-   
-   // 2. Load and validate conversation node
-   $node = $this->entityTypeManager->getStorage('node')->load($node_id);
-   
-   // 3. Add user message to node
-   $user_message = [
-     'role' => 'user',
-     'content' => $message,
-     'timestamp' => time(),
-   ];
-   $this->addMessageToNode($node, $user_message);
-   $node->save();
-   
-   // 4. Get AI response (includes summary check)
-   $ai_response = $this->aiApiService->sendMessage($node, $message);
-   
-   // 5. Add AI message to node
-   $ai_message = [
-     'role' => 'assistant', 
-     'content' => $ai_response,
-     'timestamp' => time(),
-   ];
-   $this->addMessageToNode($node, $ai_message);
-   $node->save();
-   
-   // 6. Return response with updated stats
-   return new JsonResponse([
-     'success' => TRUE,
-     'response' => $ai_response,
-     'stats' => $this->aiApiService->getConversationStats($node),
-   ]);
-   ```
-
-### 🧠 **AIApiService - Core AI Logic**
-
-**Location:** `src/Service/AIApiService.php`
-
-**Primary Method:** `sendMessage(NodeInterface $conversation, string $message)`
-
-**Processing Steps:**
-1. **Context Building:**
-   ```php
-   // Build optimized context from node data
-   $context = $this->buildOptimizedContext($conversation, $message);
-   // Context = system prompt + summary + recent messages + current message
-   ```
-
-2. **Summary Check:**
-   ```php
-   // Auto-summarize if thresholds exceeded
-   $this->checkAndUpdateSummary($conversation);
-   // Triggers when: message_count > threshold OR tokens > limit
-   ```
-
-3. **AWS Bedrock Call:**
-   ```php
-   // Send to Claude 3.5 Sonnet
-   $response = $bedrock->invokeModel([
-     'modelId' => 'anthropic.claude-3-5-sonnet-20240620-v1:0',
-     'contentType' => 'application/json',
-     'body' => json_encode($request_body)
-   ]);
-   ```
-
-4. **Response Processing:**
-   ```php
-   // Extract AI response and update node statistics
-   $content = json_decode($response['body'], true);
-   return $content['content'][0]['text'];
-   ```
-
-### 🎛️ **Frontend JavaScript Integration**
-
-**File:** `js/chat-interface.js`
-
-**Initialization:**
-```javascript
-Drupal.behaviors.aiConversationChat = {
-  attach: function(context, settings) {
-    const chatSettings = settings.aiConversation || {};
-    // Settings include: nodeId, sendMessageUrl, csrfToken, stats
-  }
-};
-```
-
-**AJAX Message Flow:**
-```javascript
-function sendMessage() {
-  console.log('🚀 Starting sendMessage for node:', chatSettings.nodeId);
-  
-  $.ajax({
-    url: chatSettings.sendMessageUrl,  // '/ai-conversation/send-message'
-    type: 'POST',
-    data: {
-      node_id: chatSettings.nodeId,    // The conversation node ID
-      message: message,
-      csrf_token: chatSettings.csrfToken
-    },
-    success: function(response) {
-      // Add AI response to chat interface
-      addMessageToChat('assistant', response.response);
-      // Update statistics display
-      updateMetricsDisplay(response.stats);
-    }
-  });
-}
-```
-
-### 🔐 **Security & Access Control**
-
-**Access Method:** `ChatController::chatAccess()`
-```php
-public function chatAccess(NodeInterface $node, AccountInterface $account) {
-  // Only ai_conversation nodes
-  if ($node->bundle() !== 'ai_conversation') {
-    return AccessResult::forbidden();
-  }
-  
-  // Node owner or admin only
-  if ($node->getOwnerId() === $account->id() || 
-      $account->hasPermission('administer content')) {
-    return AccessResult::allowed();
-  }
-  
-  return AccessResult::forbidden();
-}
-```
-
-**CSRF Protection:** All POST requests require valid CSRF tokens
-
-### 📊 **Statistics & Monitoring**
-
-**Real-time Stats Endpoint:** `/ai-conversation/stats?node_id={nid}`
-
-**Statistics Calculated:**
-- **Total Messages:** Complete message count from `field_message_count`
-- **Recent Messages:** Count of messages currently stored in `field_messages`
-- **Has Summary:** Boolean if `field_conversation_summary` exists
-- **Token Estimates:** Calculated from message content length
-- **Summary Status:** Last update timestamp
-
-### 🔄 **Rolling Summary System Implementation**
-
-**Trigger Logic:** `checkAndUpdateSummary()` in `AIApiService`
-```php
-$message_count = $conversation->get('field_message_count')->value ?: 0;
-$max_recent = $this->config->get('max_recent_messages') ?: 10;
-
-if ($message_count > $max_recent) {
-  $this->updateConversationSummary($conversation);
-  $this->pruneOldMessages($conversation);
-}
-```
-
-**Summary Generation:**
-1. **Collect older messages** beyond recent limit
-2. **Send to AI** with summarization prompt
-3. **Update** `field_conversation_summary` 
-4. **Remove old messages** from `field_messages`
-5. **Update timestamps** and counters
-
-### **Frontend Integration**
-
-#### **Chat Interface Template**
-**Location:** `templates/ai-conversation-chat.html.twig`
-
-**Features:**
-- **Message History**: Displays conversation with role-based styling
-- **Live Statistics**: Real-time metrics (token count, message count, summary status)
-- **Summary Indicator**: Visual indication when conversation has been summarized
-- **Context Display**: Shows system prompt/context information
-
-#### **JavaScript Integration**
-**Location:** `js/chat-interface.js`
-
-**Functionality:**
-- **AJAX Messaging**: Real-time message sending without page reload
-- **Live Metrics**: Auto-updating conversation statistics every 30 seconds
-- **Progressive Enhancement**: Graceful degradation without JavaScript
-- **Loading States**: Visual feedback during AI response generation
-
-#### **CSS Styling**
-**Location:** `css/chat-interface.css`
-
-**Design Elements:**
-- **Message Bubbles**: Distinct styling for user vs AI messages
-- **Statistics Panel**: Collapsible metrics display
-- **Responsive Layout**: Mobile-friendly design
-- **Loading Animations**: Visual feedback for processing states
-
-### **Configuration System**
-
-#### **Settings Form** (`/admin/config/ai-conversation`)
-**Location:** `src/Form/SettingsForm.php`
-
-**Configuration Options:**
-- **API Settings**: Max tokens per response (default: 4000)
-- **Rolling Summary**: Max recent messages (default: 10), frequency (default: 20)
-- **Token Management**: Max tokens before summary trigger (default: 6000)
-- **Debug Options**: Logging level, statistics display
-- **Connection Testing**: Live AWS Bedrock connectivity check
-
-### **Permission System**
-
-**Defined Permissions:**
-- **`use ai conversation`**: Access to AI chat features
-- **`administer ai conversation`**: Module configuration access
-
-**Content Type Permissions** (auto-granted to authenticated users):
-- **`create ai_conversation content`**
-- **`edit own ai_conversation content`**
-- **`delete own ai_conversation content`**
-- **`view own ai_conversation content`**
-
-## Installation & Setup
-
-### **Module Installation**
-1. Enable the `ai_conversation` module
-2. The install process automatically:
-   - Creates `ai_conversation` content type
-   - Adds all required fields
-   - Sets up default permissions
-
-### **Module Uninstallation (Data Preservation)**
-⚠️ **Important:** The ai_conversation module uses a **safe uninstall process** that preserves your conversation data.
-
-**Uninstall Behavior:**
-- **Fields Preserved:** All conversation fields and data remain intact
-- **Content Type:** Only removed if no conversations exist
-- **Settings:** Module configuration is removed
-- **Data Safety:** No conversation data is lost during uninstall
-
-**Complete Data Removal (Optional):**
-If you need to completely remove all conversation data, use this Drush command:
 ```bash
-drush php-eval "_ai_conversation_complete_removal();"
+# 1. Place module in custom modules directory
+# Already located at: web/modules/custom/ai_conversation/
+
+# 2. Enable the ai_conversation module
+drush en ai_conversation -y
+
+# 3. Install database schema
+drush updatedb -y
+
+# 4. Clear cache
+drush cache:rebuild
+
+# 5. Configure AWS Bedrock settings
+drush config:set ai_conversation.settings bedrock_region us-west-2 -y
+
+# 6. Set Forseti persona as default
+drush config:set ai_conversation.settings default_persona forseti-gm -y
 ```
-**⚠️ WARNING:** This permanently deletes all conversation data!
 
-### **AWS Bedrock Configuration**
+### Verify Installation
 
-#### **Environment Variables (Recommended)**
 ```bash
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_DEFAULT_REGION=us-west-2
+# Check module is enabled
+drush pm:list --type=module --status=enabled | grep ai_conversation
+
+# Verify chat interface route exists
+curl -sI http://localhost/node/1/chat | head -2
+
+# Test AWS Bedrock connectivity
+drush php:eval "echo \Drupal::service('ai_conversation.bedrock_client')->testConnection();"
+
+# Verify Forseti persona is configured
+drush config:get ai_conversation.settings default_persona
 ```
 
-#### **IAM Role (Production)**
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "bedrock:InvokeModel",
-      "Resource": "arn:aws:bedrock:us-west-2::foundation-model/anthropic.claude-*"
-    }
-  ]
-}
+## Configuration
+
+### Module Settings
+
+**Navigate to:** `admin/config/ai-conversation`
+
+#### AWS Bedrock Settings
+- **Region**: us-west-2 (configured for Bedrock availability)
+- **Model ID**: anthropic.claude-3-5-sonnet-20240620-v1:0
+- **Default Model**: Claude 3.5 Sonnet (recommended for narrative depth)
+- **Enable Caching**: Cache context per model (recommended)
+
+#### Forseti Game Master Configuration
+- **GM Persona**: Default is "Forseti" (immersive Game Master voice)
+- **Campaign Setting**: Pathfinder 2E (core ruleset)
+- **Narrative Tone**: Select from:
+  - Heroic (epic, dramatic)
+  - Gritty (dark, serious)
+  - Whimsical (humorous, light)
+  - Balanced (mixed)
+- **Lore Integration**: Load standard PF2E lore and setting details
+
+#### Rolling Summary Configuration
+- **Summary Trigger**: Number of messages before summarization (default: 10)
+- **Recent Messages Count**: How many recent messages to retain (default: 20)
+- **Max Context Tokens**: Token limit before forced summarization (default: 100,000)
+- **Auto-Summarize**: Enable automatic summarization on message save
+- **Preserve Plot Hooks**: Keep unresolved quests and cliffhangers in summaries
+
+#### Campaign Settings
+- **Session Duration Tracking**: Auto-mark session end after X minutes of inactivity
+- **Character Limit**: Maximum number of PCs per campaign (default: 6)
+- **Combat Mode**: Enable detailed combat tracking
+- **Quest Tracking**: Auto-parse quest objectives and rewards
+- **Loot Logging**: Track discovered treasure and magical items
+
+#### Performance Settings
+- **Max Response Time**: Timeout for API calls (default: 30 seconds)
+- **Retry Attempts**: Number of retries on API failure (default: 3)
+- **Token Cost Threshold**: Alert when conversation token count exceeds limit
+- **Cache Lifetime**: TTL for cached model configurations (default: 1 day)
+
+#### Debug & Monitoring
+- **Debug Mode**: Enable detailed logging (disable in production)
+- **Log API Calls**: Log all Bedrock requests/responses
+- **Performance Logging**: Track response times and token usage
+- **Error Notifications**: Alert GMs on API failures
+
+### Permission Configuration
+
+**Navigate to:** `admin/people/permissions`
+
+Grant these permissions as needed:
+
+| Permission | Role | Description |
+|-----------|------|-------------|
+| Administer AI Conversation | Admin | Full module configuration and debug access |
+| Create AI Conversation | GM Role | Can create new campaign conversations |
+| Edit Own AI Conversation | GM Role | Can edit their own campaign sessions |
+| View AI Conversation | Player Role | Can view campaign they're in |
+| Send Messages in AI Conversation | Player Role | Can send chat messages during session |
+| Export Campaign Data | GM Role | Can export campaign logs and transcripts |
+| Manage Characters | GM Role | Link PCs and NPCs to campaign |
+
+### AWS Bedrock Configuration
+
+Configure AWS credentials via environment variables:
+
+```bash
+# Option 1: Environment variables (development)
+export AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+export AWS_DEFAULT_REGION=us-west-2
+
+# Option 2: IAM instance role (production - recommended)
+# Attach IAM policy to EC2 instance with bedrock:InvokeModel permission
 ```
 
-### **Module Configuration**
-1. Navigate to `/admin/config/ai-conversation`
-2. Configure token limits and summary settings
-3. Test AWS Bedrock connection
-4. Adjust debug settings as needed
+**Configuration File:** `settings.php` or `.env`
+
+```php
+// AWS Bedrock settings for DungeonCrawler
+$config['ai_conversation.settings']['bedrock_region'] = 'us-west-2';
+$config['ai_conversation.settings']['default_model'] = 'anthropic.claude-3-5-sonnet-20240620-v1:0';
+$config['ai_conversation.settings']['enable_debug'] = FALSE;
+
+// Forseti GM persona
+$config['ai_conversation.settings']['default_persona'] = 'forseti-gm';
+$config['ai_conversation.settings']['campaign_setting'] = 'pathfinder-2e';
+$config['ai_conversation.settings']['narrative_tone'] = 'heroic';
+
+// Summary settings
+$config['ai_conversation.settings']['summary_trigger'] = 10;
+$config['ai_conversation.settings']['recent_messages'] = 20;
+$config['ai_conversation.settings']['preserve_plot_hooks'] = TRUE;
+```
 
 ## Usage
 
-### **Creating Conversations**
-1. Create a new "AI Conversation" content node
-2. Set title and optional system context
-3. Save the node
-4. Visit `/node/{nid}/chat` to start chatting
+### Step-by-Step Campaign Workflow
 
-### **Chat Features**
-- **Send Messages**: Type and send messages to the AI
-- **View History**: See conversation history with user/AI message distinction
-- **Monitor Usage**: Track token usage and conversation statistics
-- **Summary Management**: View when conversation has been summarized
+#### Step 1: Create Campaign Conversation Node
 
-### **Administrative Features**
-- **Manual Summary**: Force summary generation via `/node/{nid}/trigger-summary`
-- **Statistics Monitoring**: Real-time conversation metrics
-- **Debug Logging**: Detailed logging for troubleshooting
-- **Connection Testing**: Validate AWS Bedrock connectivity
-
-## Integration with Other Modules
-
-### **As Foundation Service Provider**
-The ai_conversation module serves as the foundational AI service for other modules:
-
-```php
-// Other modules can use the AI service
-$ai_service = \Drupal::service('ai_conversation.api_service');
-$response = $ai_service->sendMessage($conversation_node, $message);
-```
-
-### **Dependent Modules**
-- **resume_tailoring**: Uses AI service for resume customization
-- **Future AI modules**: Can leverage centralized AI infrastructure
-
-## Token Economy & Cost Management
-
-### **Token Estimation**
-- **Rough Formula**: 1 token ≈ 4 characters
-- **Context Optimization**: Summary + recent messages minimize token usage
-- **Automatic Management**: Rolling summary prevents exponential token growth
-
-### **Cost Efficiency Features**
-- **Smart Summarization**: Reduces context size while preserving information
-- **Configurable Limits**: Adjustable max tokens and summary frequency
-- **Usage Tracking**: Monitor token consumption per conversation
-- **Model Selection**: Support for different Claude models (cost vs capability)
-
-## Troubleshooting
-
-### **Common Issues**
-
-#### **"Failed to communicate with AI service"**
-- Check AWS credentials (environment variables or IAM role)
-- Verify network connectivity to AWS Bedrock
-- Test connection via settings page
-
-#### **"Summary generation failed"**
-- Check AWS Bedrock permissions
-- Verify model availability in us-west-2 region
-- Review error logs for detailed messages
-
-#### **Missing conversation history**
-- Check if conversation has been summarized (look for summary indicator)
-- Recent messages are preserved, older messages are in summary
-- Use manual summary trigger for testing
-
-### **Debug Mode**
-Enable debug mode in settings to get detailed logging:
-- API request/response details
-- Token usage breakdown
-- Summary generation process
-- Performance metrics
-
-This module provides a production-ready, scalable foundation for AI-powered conversations with intelligent context management and cost optimization.
-- **Region**: `us-west-2`
-- **Max Tokens**: Configurable (default: 4000)
-
-### Core Architecture
-
-#### AIApiService Class
-Main service handling AI communication and conversation management.
-
-**Key Methods**:
-- `sendMessage(NodeInterface $conversation, string $message)`: Send messages to AI
-- `buildOptimizedContext()`: Creates context with summary + recent messages
-- `checkAndUpdateSummary()`: Manages rolling summary updates
-- `estimateTokens()`: Estimates token usage for optimization
-
-#### Rolling Summary System
-- **Automatic Summarization**: Triggers when conversation exceeds thresholds
-- **Context Optimization**: Maintains summary + recent messages only
-- **Token-Based Logic**: Summarizes based on token count, not just message count
-- **Intelligent Pruning**: Removes older messages while preserving context
-
-### Database Schema
-
-#### Conversation Content Type Fields
-- **`field_conversation_summary`**: Stores rolling summary of older messages
-- **`field_message_count`**: Tracks total messages for summary logic
-- **`field_summary_updated`**: Timestamp of last summary update
-- **`field_total_tokens`**: Running count of tokens used
-- **`field_ai_model`**: Selected AI model for the conversation
-
-## 🚀 Installation
-
-1. Enable the module: `drush pm:enable ai_conversation`
-2. Run database updates: `drush updatedb`
-3. Configure AWS credentials for Bedrock access
-4. Configure module settings
-5. Clear cache: `drush cr`
-
-## 📋 Requirements
-
-- Drupal 9, 10, or 11
-- Node module
-- AWS SDK for PHP
-- AWS Bedrock access with Claude model permissions
-
-## 🔑 Configuration
-
-### AWS Bedrock Credentials
-
-The module supports multiple ways to configure AWS credentials (in order of precedence):
-
-1. **Admin Interface** (Recommended)
-   - Navigate to `/admin/config/ai-conversation/settings`
-   - Enter your AWS credentials through the web form
+1. Navigate to **Content → Add content → AI Conversation**
+2. Fill in campaign details:
+   - **Title**: Campaign name (e.g., "The Godsmouth Heresy")
+   - **AI Model**: Claude 3.5 Sonnet (default, recommended)
+   - **Persona**: Forseti (Game Master)
+   - **Context** (auto-populated): Campaign setting and rules
    
-2. **Environment Variables** (Automatic fallback)
-   - Set `AWS_ACCESS_KEY_ID`
-   - Set `AWS_SECRET_ACCESS_KEY` 
-   - Set `AWS_DEFAULT_REGION` (optional, defaults to us-west-2)
+3. Optional configuration:
+   - **Campaign Setting**: Absalom, Golarion, or custom
+   - **Difficulty Level**: Moderate, Hard, Deadly, Insane
+   - **Player Count**: Expected number of PCs
+   - **Session Notes**: Campaign premise and objectives
    
-   The module will automatically use environment variables if configuration values are empty.
+4. Click **Save** to create your campaign node
 
-3. **AWS Default Credential Chain** (For AWS infrastructure)
-   - IAM roles, instance profiles, ECS task roles, etc.
-   - No configuration needed when running on AWS
+#### Step 2: Start the Campaign
 
-4. **Drush Commands** (For automated deployments)
-   ```bash
-   ./vendor/bin/drush config:set ai_conversation.settings aws_access_key_id "YOUR_ACCESS_KEY"
-   ./vendor/bin/drush config:set ai_conversation.settings aws_secret_access_key "YOUR_SECRET_KEY"
+1. After saving, click **"Start Campaign"** or navigate to `/node/{nid}/chat`
+   - Example: `https://dungeoncrawler.forseti.life/node/42/chat`
+2. Campaign interface loads with:
+   - Message history area (empty for new campaigns)
+   - Message input field for player actions
+   - Campaign statistics panel (XP, loot, session count)
+   - Character roster showing party members
+   - Quest log with active objectives
+
+#### Step 3: Play Through Campaign Sessions
+
+1. **PC Actions**: Players describe their characters' actions
+   - Skill checks: "I want to climb the rope. I have +8 Athletics."
+   - Combat: "I attack the goblin with my longsword."
+   - Roleplay: "I try to persuade the tavern keeper to give us information."
+
+2. **Forseti Responds**: Game Master uses narrative voice
+   ```
+   "As your blade arcs through the air, you feel it connect with 
+    a satisfying thud. The goblin shrieks and stumbles backward, 
+    blood seeping from the wound. Roll damage!"
    ```
 
-### Required AWS Permissions
-Your credentials need:
-- `bedrock:InvokeModel` for Claude models
-- Access to specific model ARNs in your region
+3. **Outcomes**: All actions stored in campaign node with:
+   - Timestamp of action
+   - Player who took action
+   - Result and consequences
+   - Any rolls or mechanical effects
 
-### Module Configuration
-Navigate to **Admin → Configuration → AI Conversation Settings** to configure:
+#### Step 4: Manage Campaign State
 
-#### Memory Management
-- **Max Recent Messages**: Number of recent messages to keep (default: 10)
-- **Token Threshold**: Maximum tokens before triggering summary (default: 6000)
-- **Summary Frequency**: Update summary every N messages (default: 20)
+1. **Track Progress**:
+   - Active quests with objectives
+   - NPCs met and relationships
+   - Locations discovered
+   - Treasure acquired
 
-#### Response Settings
-- **Max Tokens**: Maximum tokens for AI responses (default: 4000)
-- **Model Selection**: Choose AI model (supports fallback to default)
+2. **Session Management**:
+   - Mark session complete
+   - Summarize session events
+   - Award XP and treasure
+   - Plan next session
 
-#### Debug Options
-- **Debug Mode**: Enable detailed logging
-- **Statistics Display**: Show token usage and conversation stats
+3. **Ongoing Refinement**:
+   - Ask Forseti for clarifications
+   - Request skill check descriptions
+   - Adjust difficulty as needed
+   - Track long-term plot developments
 
-## 📊 Usage
+### Conversation Templates & Examples
 
-### Starting a Conversation
-1. **Create Conversation Node**: Add new AI Conversation content
-2. **Configure Settings**: Select AI model and parameters
-3. **Begin Chat**: Use the chat interface to interact with AI
+#### Example 1: Introductory Quest Setup
 
-### Chat Interface Features
-- **Real-time Responses**: Immediate AI responses
-- **Message History**: Full conversation history with timestamps
-- **Context Awareness**: AI maintains conversation context
-- **Auto-scrolling**: Interface automatically scrolls to new messages
-
-### Conversation Management
-- **Automatic Summarization**: System manages context automatically
-- **Token Tracking**: Monitor usage in conversation details
-- **Context Optimization**: Recent messages + summary for best performance
-
-## 🎨 Advanced Features
-
-### Rolling Summary System
-The module implements a sophisticated memory management system:
-
-1. **Monitors Conversation Length**: Tracks both message count and token usage
-2. **Triggers Summarization**: When thresholds are exceeded
-3. **Generates Summary**: AI creates concise summary of older messages
-4. **Prunes History**: Removes older messages while keeping summary
-5. **Maintains Context**: Recent messages + summary for continuity
-
-### Token Optimization
-- **Input Token Estimation**: Calculates tokens before sending to AI
-- **Output Token Tracking**: Monitors response token usage
-- **Total Token Management**: Maintains running totals per conversation
-- **Cost Optimization**: Reduces API costs through efficient context management
-
-## 🔍 Logging and Monitoring
-
-The module provides comprehensive logging:
-
-- **Conversation Events**: Message sending and receiving
-- **Summary Operations**: When summaries are created/updated
-- **Token Usage**: Detailed token consumption tracking
-- **Error Conditions**: API errors and recovery attempts
-- **Performance Metrics**: Response times and optimization events
-
-Access logs: **Reports > Recent log messages > ai_conversation**
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-**AI Not Responding**
-- Check AWS Bedrock permissions and connectivity
-- Verify Claude model access
-- Review error logs for API issues
-- Test with simple messages first
-
-**Token Limit Exceeded**
-- Adjust max tokens setting
-- Check summary frequency configuration
-- Review conversation length and complexity
-
-**Summary Not Working**
-- Verify token threshold settings
-- Check summary frequency configuration
-- Review conversation message count
-
-**Model Errors**
-- Confirm model ID is correct
-- Check for model availability in region
-- Verify AWS service status
-
-### Debug Steps
-1. Enable debug mode in module configuration
-2. Check recent log messages for detailed information
-3. Test AWS connectivity with simple requests
-4. Verify conversation node configuration
-5. Monitor token usage in conversation details
-
-## 🔄 Customization
-
-### Prompt Engineering
-Modify the system prompts in `AIApiService.php` to:
-- Adjust AI personality and behavior
-- Add specialized knowledge domains
-- Customize response formatting
-- Implement role-based responses
-
-### Model Configuration
-- Change AI model by updating configuration
-- Support for multiple models per conversation
-- Fallback model configuration for reliability
-
-### Summary Behavior
-Customize summarization by modifying:
-- Summary prompt templates
-- Trigger thresholds
-- Context window size
-- Message retention policies
-
-## 🚀 Future Enhancements
-
-Potential improvements:
-- Multi-model conversations
-- Conversation templates
-- Export/import functionality
-- API integration
-- Mobile-optimized interface
-- Voice interaction support
-
-## 📞 Support
-
-For issues or questions:
-1. Enable debug mode for detailed error information
-2. Check AWS Bedrock service status and permissions
-3. Review conversation configuration settings
-4. Test with minimal conversation complexity
-5. Monitor token usage and adjust thresholds accordingly
-2. Start chatting - the system will automatically handle summarization
-3. Monitor the conversation statistics panel
-4. Watch as older messages get summarized after reaching thresholds
-
-## 🚀 How It Works
-
-### Context Building Process
-1. **System prompt** (from node context field)
-2. **Conversation summary** (if exists)
-3. **Recent messages** (last N messages)
-4. **Current user message**
-
-### Summary Generation Logic
 ```
-IF (message_count > max_recent_messages) {
-  IF (message_count % summary_frequency == 0) OR (tokens > max_tokens_before_summary) {
-    GENERATE_SUMMARY()
-    PRUNE_OLD_MESSAGES()
+GM: "Welcome to the city of Absalom! You find yourselves in the 
+     bustling Silver Eel Tavern, the air thick with pipe smoke and 
+     the clinking of mugs. A hooded figure in the corner waves you over..."
+
+Player 1: "I approach the figure cautiously. I'm watching for any sign 
+         of treachery. Perception check: 18."
+
+GM: "As you weave through the crowd, you notice the figure's hand resting 
+     on a concealed dagger. The tavern noise makes it hard to overhear 
+     their conversation with a nearby sailor, but you catch fragments: 
+     '...missing caravan...' and '...reward for recovery...'
+     
+     The figure looks up and gestures to a seat. 'Please, sit. I have 
+     a proposition that might interest adventurers of your caliber.'"
+
+Player 2: "I sit down and order an ale. What does this person look like?"
+
+GM: "Drawing back their hood slightly, you see a middle-aged woman with 
+     piercing gray eyes and a thin scar running down her left cheek. 
+     She introduces herself as Harenna Vale, a merchant from Korvosa..."
+```
+
+#### Example 2: Combat Encounter
+
+```
+GM: "The dire wolf snarls, saliva dripping from its fangs. It lunges 
+     at the rogue!"
+
+[Forseti rolls and narrates combat round-by-round, tracking AC, HP, conditions]
+
+Player 1: "I cast Fireball centered 20 feet above the wolves to hit all three!"
+
+GM: "An excellent tactical choice! The wolves take the blast:
+     Wolf 1: Failed Reflex save. Takes 18 damage (down to 7 HP).
+     Wolf 2: Succeeded save. Takes 9 damage (down to 16 HP).
+     Wolf 3: Failed save. Takes 19 damage (down to 6 HP).
+     
+     The smell of singed fur fills the air. Two wolves howl in pain 
+     and back away, but the largest one snarls and presses forward..."
+```
+
+#### Example 3: Roleplay and NPC Interaction
+
+```
+Player: "I ask the innkeeper about recent disappearances in town."
+
+GM: "The grizzled innkeeper leans on the bar, wiping a glass. 
+     'Aye, there's been trouble, there has. Three merchants gone 
+     missing in the last fortnight. All headed the same direction—
+     the Old Mill Road, heading north. Ain't nothing good out that way.
+     
+     The city guard captain thinks it's bandits, but I got a feeling 
+     it's something... worse.' He glances around nervously.
+     
+     Make an Occultism or Society check if you'd like to know more."
+
+Player (rolls 16): "I got a 16 on Society."
+
+GM: "Your knowledge of Absalom history surfaces: The Old Mill has been 
+     abandoned for ten years. There were rumors of strange rituals 
+     performed there by a cult before the city guard shut it down. 
+     Three disappearances... all in two weeks... heading toward an 
+     abandoned site with a dark history? This doesn't feel coincidental."
+```
+
+### Campaign Statistics & Tracking
+
+The module tracks:
+
+```
+Campaign: The Godsmouth Heresy
+├─ Sessions Completed: 12
+├─ Total Playtime: 54 hours
+├─ Party Level: 5
+├─ XP Awarded: 18,500 total
+├─ Loot Value: 8,200 gp
+│
+├─ Active Quests: 3
+│  ├─ Primary: Rescue the Merchant Caravan
+│  ├─ Secondary: Investigate the Cult
+│  └─ Side: Help the Blacksmith's Daughter
+│
+├─ Party Roster: 4 members
+│  ├─ Aldric (Human Fighter, Level 5)
+│  ├─ Mira (Elf Rogue, Level 5)
+│  ├─ Thorne (Dwarf Cleric, Level 5)
+│  └─ Lyssa (Human Wizard, Level 5)
+│
+└─ Recent Events
+   ├─ Session 12: Defeated the Cult Leader
+   ├─ Session 11: Discovered the Cult's Lair
+   ├─ Session 10: Tracked Caravan to Old Mill
+   └─ Session 9: Met Harenna Vale at Tavern
+```
+
+### Advanced Features
+
+#### Export Campaign
+
+```bash
+# Export full campaign as PDF
+curl -H "Accept: application/pdf" \
+  http://localhost/api/campaigns/42/export \
+  > campaign_log.pdf
+
+# Export as Markdown for editing
+curl -H "Accept: text/markdown" \
+  http://localhost/api/campaigns/42/export \
+  > campaign_narrative.md
+
+# Export combat log as spreadsheet
+curl -H "Accept: text/csv" \
+  http://localhost/api/campaigns/42/combat-log \
+  > combat_log.csv
+```
+
+#### Programmatic Access
+
+```php
+// Load a campaign node
+$campaign = Node::load(42);
+
+// Access campaign details
+$title = $campaign->label();
+$pc_count = count(json_decode($campaign->field_party_roster->value));
+$current_level = $campaign->field_party_level->value;
+
+// Get recent campaign events
+$messages = json_decode($campaign->field_messages->value, TRUE);
+$recent = array_slice($messages, -10);
+
+// Query campaign statistics
+$stats = \Drupal::service('ai_conversation.campaign_stats')
+  ->getCampaignStats(42);
+echo "Total sessions: " . $stats->getSessionCount();
+```
+
+## Dependencies
+
+### Required
+- **Drupal Node Module**: Core entity storage system
+- **Drupal Field Module**: Core field system for storing messages
+- **Drupal User Module**: Authentication and user permissions
+- **Drupal System Module**: Core system hooks and services
+
+### Optional
+- **Views Module**: For campaign listing and quest tracking
+- **REST API Module**: For programmatic campaign access
+- **Serialization Module**: For JSON/XML export functionality
+- **PF2E Content Modules**: For character sheet integration
+
+### External Services
+- **AWS Bedrock**: Claude 3.5 Sonnet model inference
+- **AWS Region**: us-west-2 (required for Bedrock availability)
+
+### System Requirements
+- PHP 8.0+ (8.2+ recommended)
+- Composer (for AWS SDK)
+- cURL (for HTTP requests)
+
+## API Documentation
+
+### REST Endpoints
+
+#### Create Campaign
+
+```
+POST /api/campaigns
+Content-Type: application/json
+
+{
+  "title": "The Godsmouth Heresy",
+  "field_ai_model": "claude-3-5-sonnet",
+  "field_campaign_setting": "absalom-golarion",
+  "field_difficulty": "hard",
+  "field_party_size": 4
+}
+
+Response: 201 Created
+{
+  "nid": 42,
+  "uri": "/api/campaigns/42"
+}
+```
+
+#### Send Player Action
+
+```
+POST /api/campaigns/42/action
+Content-Type: application/json
+
+{
+  "action": "I cast Fireball at the goblin horde!",
+  "player": "Lyssa (Wizard)",
+  "check_type": "spell_attack",
+  "check_result": "19"
+}
+
+Response: 200 OK
+{
+  "gm_response": "The spell erupts in a ball of flame...",
+  "outcome": "success",
+  "tokens_used": 342
+}
+```
+
+#### Get Campaign Status
+
+```
+GET /api/campaigns/42
+
+Response: 200 OK
+{
+  "title": "The Godsmouth Heresy",
+  "party_level": 5,
+  "sessions_completed": 12,
+  "active_quests": 3,
+  "party_roster": ["Aldric", "Mira", "Thorne", "Lyssa"],
+  "last_session": 1704067200,
+  "total_playtime_hours": 54
+}
+```
+
+#### Export Campaign
+
+```
+GET /api/campaigns/42/export?format=pdf
+
+Response: 200 OK
+[PDF binary data]
+```
+
+### Drupal Hooks
+
+#### Campaign Event Processing
+
+```php
+// Process campaign events
+function my_module_ai_conversation_campaign_event(&$event, $campaign_node) {
+  // Log combat events, track XP, etc.
+  if ($event['type'] === 'combat_victory') {
+    $xp = $event['xp_award'];
+    \Drupal::logger('my_module')->info('Battle won: %xp XP awarded', [
+      '%xp' => $xp
+    ]);
   }
 }
 ```
 
-### Summary Content
-- **Existing summary** (if updating)
-- **Key topics and decisions** from older messages
-- **Important context** for conversation continuity
-- **Concise but comprehensive** overview
+#### Character Tracking Hook
 
-## 📊 User Experience
-
-### Chat Interface Features
-- **Statistics panel** showing:
-  - Total messages vs. recent messages
-  - Summary status (Yes/No)
-  - Estimated token usage
-  - Last summary update time
-
-- **Visual indicators**:
-  - Summary indicator when conversation is summarized
-  - Loading spinner during AI responses
-  - Error handling for failed requests
-
-- **Manual controls**:
-  - Trigger summary update button (appears after 20+ messages)
-  - Clear input button
-  - Enter to send, Shift+Enter for new line
-
-### Performance Monitoring
-- **Real-time statistics** update after each message
-- **Token estimation** to predict API costs
-- **Summary effectiveness** tracking
-
-## 🛠️ API Endpoints
-
-### New Endpoints
-- **`/ai-conversation/stats`** - Get conversation statistics
-- **`/node/{node}/trigger-summary`** - Manually trigger summary update
-- **`/admin/config/ai-conversation`** - Configuration form
-
-### Enhanced Endpoints
-- **`/ai-conversation/send-message`** - Now returns updated statistics
-- **`/node/{node}/chat`** - Includes statistics in interface
-
-## 🔍 Debugging & Monitoring
-
-### Debug Mode Features
-- **Detailed logging** of summary generation
-- **Token usage tracking**
-- **Message pruning logs**
-- **API call monitoring**
-
-### Statistics Available
 ```php
-$stats = [
-  'total_messages' => 45,
-  'recent_messages' => 10,
-  'has_summary' => true,
-  'estimated_tokens' => 2847,
-  'summary_updated' => 1704067200
-];
+// Track NPC relationships
+function my_module_ai_conversation_npc_mention($npc_name, $action, $campaign_node) {
+  // Track NPC interactions for relationship changes
+  if ($action === 'hostility_increase') {
+    \Drupal::logger('my_module')->notice('%npc is now hostile', [
+      '%npc' => $npc_name
+    ]);
+  }
+}
 ```
 
-## 📈 Performance Benefits
+## Development
 
-### Before Implementation
-- **Growing context** sent to API with every message
-- **Token usage** increases linearly with conversation length
-- **API costs** escalate with longer conversations
-- **Response time** degrades with large contexts
+### Module Architecture
 
-### After Implementation
-- **Constant context size** (summary + recent messages)
-- **Predictable token usage** regardless of conversation length
-- **Optimized API costs** through smart context management
-- **Consistent response times** with bounded context
+```
+ai_conversation/ (DungeonCrawler variant)
+├── src/
+│   ├── Controller/
+│   │   ├── CampaignController.php (Campaign management)
+│   │   ├── ChatController.php (Chat interface and AJAX)
+│   │   └── CombatController.php (Combat orchestration)
+│   ├── Service/
+│   │   ├── ChatService.php (Message processing)
+│   │   ├── CampaignService.php (Campaign logic)
+│   │   ├── CombatService.php (Combat mechanics)
+│   │   ├── BedrockClient.php (AWS integration)
+│   │   ├── SummaryService.php (Rolling summary)
+│   │   └── TokenCounter.php (Token accounting)
+│   ├── Plugin/
+│   │   └── ... (Drupal integrations)
+│   └── Persona/
+│       └── ForsetiGMPersona.php (Game Master voice)
+├── config/
+│   ├── schema/
+│   └── install/ (Default configuration)
+├── templates/
+│   ├── campaign-interface.html.twig
+│   ├── character-roster.html.twig
+│   └── quest-log.html.twig
+├── js/
+│   ├── campaign-chat.js (AJAX messaging)
+│   ├── combat-tracker.js (Combat UI)
+│   └── character-roster.js (PC management)
+├── css/
+│   └── campaign-interface.css (D&D styling)
+└── ai_conversation.module (Hooks)
+```
 
-## 🎛️ Configuration Options
+### Key Services
 
-### Essential Settings
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `max_recent_messages` | 10 | Recent messages to keep in full |
-| `max_tokens_before_summary` | 6000 | Token threshold for summary trigger |
-| `summary_frequency` | 20 | Messages between summary updates |
-| `enable_auto_summary` | TRUE | Enable automatic summarization |
+#### CampaignService
 
-### Advanced Settings
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `max_tokens` | 4000 | Max tokens for AI responses |
-| `debug_mode` | FALSE | Enable detailed logging |
-| `show_stats` | TRUE | Show statistics in chat interface |
+```php
+// Create new campaign
+$service = \Drupal::service('ai_conversation.campaign_service');
+$node = $service->createCampaign('The Godsmouth Heresy', 'hard', 4);
 
-## 🔄 Deployment with GitHub Actions
+// Get campaign statistics
+$stats = $service->getCampaignStats($node);
+echo "Sessions: " . $stats->getSessionCount();
+```
 
-Your existing deployment pipeline will automatically handle:
-- Database updates (`drush updatedb`)
-- Cache clearing (`drush cache:rebuild`)
-- Code deployment (via Git or rsync)
+#### CombatService
 
-## 🧪 Testing Strategy
+```php
+// Process combat action
+$combat_service = \Drupal::service('ai_conversation.combat_service');
+$result = $combat_service->processAction(
+  $campaign_node,
+  'attack',
+  ['target' => 'goblin', 'roll' => 18]
+);
+```
 
-### Manual Testing
-1. **Create long conversation** (30+ messages)
-2. **Verify summary generation** at configured intervals
-3. **Check context optimization** in API calls
-4. **Monitor token usage** through statistics
-5. **Test manual summary trigger**
+#### ForsetiGMPersona
 
-### Automated Testing
+```php
+// Get GM response with Forseti voice
+$persona = \Drupal::service('ai_conversation.forseti_persona');
+$response = $persona->respondToAction($campaign_node, $player_action);
+echo $response->getNarrative();  // Rich D&D description
+```
+
+### Testing
+
 ```bash
-# Test API connection
-drush ai-conversation:test
+# Run unit tests
+cd web/modules/custom/ai_conversation
+../../../vendor/bin/phpunit tests/Unit/
 
-# Check configuration
-drush config:get ai_conversation.settings
+# Run campaign simulation tests
+../../../vendor/bin/phpunit tests/Functional/CampaignSimulation/
 
-# Verify database schema
-drush sql:query "DESCRIBE node__field_conversation_summary"
+# Run with code coverage
+../../../vendor/bin/phpunit --coverage-html=coverage/ tests/
 ```
 
-## 🚨 Troubleshooting
+### Local Development
+
+```bash
+# 1. Create test campaign
+drush php:eval "
+  \$node = \Drupal::entityTypeManager()
+    ->getStorage('node')
+    ->create([
+      'type' => 'ai_conversation',
+      'title' => 'Test Campaign',
+      'field_campaign_setting' => 'absalom-golarion'
+    ]);
+  \$node->save();
+  echo 'Campaign created: nid=' . \$node->id();
+"
+
+# 2. Enable debug mode
+drush config:set ai_conversation.settings debug_mode TRUE -y
+
+# 3. View debug logs
+drush watchdog:tail ai_conversation
+
+# 4. Access campaign at /node/{nid}/chat
+```
+
+### Performance Optimization
+
+```php
+// Cache campaign context
+$cache = \Drupal::cache('default')->get('campaign_context_' . $nid);
+if (!$cache) {
+  $context = $this->buildCampaignContext($node);
+  \Drupal::cache('default')->set('campaign_context_' . $nid, $context, 3600);
+}
+
+// Batch process session archives
+$batch = [
+  'title' => 'Archiving old campaigns...',
+  'operations' => [
+    ['ai_conversation_batch_archive_campaigns', []],
+  ],
+];
+batch_set($batch);
+```
+
+## Contributing
+
+### Contribution Guidelines
+
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork & Branch**: Create a feature branch (`feature/my-feature`)
+2. **Code Standards**: Follow Drupal coding standards (phpcs)
+3. **Tests**: Add tests for new functionality
+4. **Documentation**: Update this README for new features
+5. **Commit Message**: Use descriptive messages with issue references
+
+### Code Quality
+
+```bash
+# Check code standards
+phpcs src/
+
+# Fix formatting
+phpcbf src/
+
+# Run static analysis
+phpstan --level=7 src/
+```
+
+### Reporting Issues
+
+When reporting issues, please include:
+- Drupal version
+- Module version
+- Campaign type and size
+- Reproduction steps
+- Expected vs. actual behavior
+- Campaign statistics (message count, session count)
+
+### Security Considerations
+
+- **No Credentials in Code**: Never commit AWS keys or secrets
+- **Input Validation**: Sanitize all player actions before API calls
+- **Output Encoding**: Always escape GM responses in templates
+- **CSRF Protection**: All forms include token validation
+- **Access Control**: Verify player permissions before exposing campaign
+- **Data Privacy**: Respect privacy for campaign and character data
+
+### Performance Optimization
+
+For epic multi-session campaigns:
+
+```php
+// Archive old sessions to improve performance
+$archived = $this->archiveSessionsBefore($node, time() - (365 * 86400));
+echo "Archived " . count($archived) . " sessions";
+
+// Optimize message storage
+\Drupal::database()->query('OPTIMIZE TABLE node__field_messages;');
+
+// Token tracking optimization
+\Drupal::cache('default')->set('campaign_tokens_' . $nid, $token_count, 3600);
+```
+
+## License
+
+This module is licensed under the **GNU General Public License v3.0 (GPL-3.0-only)**.
+
+See the LICENSE file for full details.
+
+```
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+```
+
+## Support
+
+### Getting Help
+
+- **Documentation**: See ARCHITECTURE.md, DUNGEONCRAWLER_CONTEXT.md, and GENAI_CACHING.md
+- **Issues**: File bugs via issue tracker
+- **Community**: Ask questions in Drupal and D&D forums
+- **Commercial Support**: Contact module maintainers
 
 ### Common Issues
 
-**Summary not generating**
-- Check `enable_auto_summary` setting
-- Verify message count threshold
-- Review debug logs
+#### Forseti Not Responding
 
-**High token usage**
-- Reduce `max_recent_messages`
-- Lower `max_tokens_before_summary`
-- Check summary quality
-
-**API errors**
-- Verify AWS credentials
-- Check Bedrock model availability
-- Review error logs
-
-### Debug Commands
 ```bash
-# Check module status
-drush pm:list | grep ai_conversation
+# Check AWS Bedrock connectivity
+drush php:eval "\Drupal::service('ai_conversation.bedrock_client')->testConnection();"
 
-# View recent logs
-drush watchdog:show --type=ai_conversation
+# Verify Forseti persona is configured
+drush config:get ai_conversation.settings default_persona
 
-# Test configuration
-drush config:get ai_conversation.settings
+# Check credentials
+echo "Region: $AWS_DEFAULT_REGION"
+echo "Access Key: ${AWS_ACCESS_KEY_ID:0:10}..."
 ```
 
-## 🎯 Next Steps
+#### Campaign Not Saving Messages
 
-### Immediate Actions
-1. **Deploy the updated module** using your GitHub Actions pipeline
-2. **Configure settings** through the admin interface
-3. **Test with existing conversations** to verify functionality
-4. **Monitor performance** through the statistics panel
+```bash
+# Check field_messages database
+drush sql:query "SELECT COUNT(*) FROM node__field_messages WHERE entity_id=42;"
 
-### Future Enhancements
-- **Advanced summarization** with topic extraction
-- **Conversation branching** for different discussion threads
-- **Export/import** of conversation summaries
-- **Integration with other AI models** for specialized summarization
+# Verify permissions
+drush php:eval "
+  \$user = \Drupal\user\Entity\User::load(1);
+  echo \$user->hasPermission('send messages in ai conversation') ? 'Yes' : 'No';
+"
 
-## 📝 File Structure
-
-```
-ai_conversation/
-├── ai_conversation.install          # Database schema + updates
-├── ai_conversation.module           # Hooks and theme definitions
-├── ai_conversation.routing.yml      # Route definitions
-├── ai_conversation.services.yml     # Service definitions
-├── ai_conversation.libraries.yml    # Asset libraries
-├── src/
-│   ├── Service/
-│   │   └── AIApiService.php        # Enhanced AI service
-│   ├── Controller/
-│   │   └── ChatController.php      # Enhanced chat controller
-│   └── Form/
-│       └── SettingsForm.php        # Configuration form
-├── templates/
-│   └── ai-conversation-chat.html.twig  # Chat interface template
-├── css/
-│   └── chat-interface.css          # Styles
-└── js/
-    └── chat-interface.js           # JavaScript functionality
+# Check for PHP errors
+drush watchdog:tail ai_conversation
 ```
 
-## 🎉 Success Metrics
+#### High Token Usage
 
-Your rolling summary system is working correctly when:
-- ✅ **Conversation statistics** update in real-time
-- ✅ **Summary indicator** appears after threshold reached
-- ✅ **Token usage** remains stable regardless of conversation length
-- ✅ **API response times** stay consistent
-- ✅ **Context quality** maintained through summarization
+```bash
+# Monitor token spending per campaign
+drush watchdog:tail ai_conversation | grep tokens
 
-**Ready to revolutionize your AI conversations with intelligent context management!** 🚀
+# Reduce recent message count for older campaigns
+drush config:set ai_conversation.settings recent_messages 15 -y
+
+# Archive old campaigns to reduce context size
+drush eval "
+  \$nodes = \Drupal::entityTypeManager()
+    ->getStorage('node')
+    ->loadByProperties(['type' => 'ai_conversation', 'created' => [time() - 15552000, '<']]);
+"
+```
+
+#### Combat Not Tracking Properly
+
+```bash
+# Check combat log table
+drush sql:query "SELECT * FROM copilot_agent_tracker_events WHERE type LIKE '%combat%' ORDER BY timestamp DESC LIMIT 10;"
+
+# Verify combat service is loaded
+drush php:eval "echo \Drupal::service('ai_conversation.combat_service') ? 'Loaded' : 'Not loaded';"
+```
+
+## Security
+
+### Security Considerations
+
+#### Authentication & Authorization
+- **GM Only**: Campaign creation restricted to Game Masters
+- **Player Visibility**: Players only see campaigns they're members of
+- **CSRF Protection**: All AJAX endpoints use Drupal's token validation
+- **API Authorization**: Requires user authentication for REST endpoints
+
+#### Data Protection
+- **AWS Encryption**: Data in transit over HTTPS to AWS Bedrock
+- **Input Sanitization**: All player actions validated before API calls
+- **Output Escaping**: All GM responses escaped in templates
+- **No Credential Storage**: AWS credentials never stored in database
+
+#### Audit Trail
+- **Action Logging**: All player actions timestamped and stored
+- **Campaign History**: Full audit trail of campaign progression
+- **Admin Visibility**: Administrators can review any campaign
+- **Compliance Ready**: Suitable for GDPR compliance
+
+### Reporting Security Issues
+
+Do not file public security issues. Instead:
+1. Email security concerns to maintainers
+2. Include detailed reproduction steps
+3. Allow 90 days for response and patching
+
+## Maintenance
+
+### Upgrade Path
+
+```bash
+# Update module
+cd web/modules/custom/ai_conversation
+git pull origin main
+
+# Run database updates
+drush updatedb -y
+
+# Clear cache
+drush cache:rebuild
+
+# Verify
+drush pm:list --type=module | grep ai_conversation
+```
+
+### Database Maintenance
+
+```bash
+# Optimize message storage
+drush sql:query "OPTIMIZE TABLE node__field_messages, node__field_conversation_summary;"
+
+# Archive very old campaigns (2+ years)
+drush sql:query "
+  UPDATE node SET status=0 
+  WHERE type='ai_conversation' AND created < DATE_SUB(NOW(), INTERVAL 2 YEAR)
+"
+
+# View database stats
+drush sql:query "
+  SELECT 
+    'campaigns' as metric, COUNT(*) as count 
+  FROM node 
+  WHERE type='ai_conversation'
+  UNION ALL
+  SELECT 
+    'total_messages', SUM(field_message_count_value)
+  FROM node__field_message_count
+  WHERE entity_id IN (SELECT nid FROM node WHERE type='ai_conversation');
+"
+```
+
+### Monitoring & Performance
+
+Monitor these metrics:
+
+| Metric | Target | Action if Exceeded |
+|--------|--------|-------------------|
+| Average Response Time | < 3s | Optimize Forseti context |
+| API Errors | < 0.5% | Check AWS Bedrock status |
+| Token Usage per Campaign | < 500K | Archive or summarize |
+| Database Size | < 50GB | Archive old campaigns |
+| Failed Actions | < 1% | Review error logs |
+
+### Version History
+
+- **1.0.0** (Feb 2026): Initial release with Forseti persona and Bedrock integration
+- **1.1.0** (Future): Full PF2E character sheet integration
+- **1.2.0** (Future): Multi-table campaign management
+- **2.0.0** (Future): Custom rulesets and world settings
