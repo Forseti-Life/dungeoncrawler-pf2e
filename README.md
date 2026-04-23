@@ -1,3 +1,5 @@
+<!-- AUTOMATION VALIDATION: 2026-04-23 - automation of development confirmed for this repo -->
+
 # Dungeon Crawler: PF2E
 
 Pathfinder 2E character and campaign management system with GenAI support.
