@@ -4,6 +4,7 @@ namespace Drupal\dungeoncrawler_content\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\dungeoncrawler_content\Service\RoadmapPipelineStatusResolver;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,16 +26,20 @@ class RoadmapController extends ControllerBase {
 
   protected Connection $database;
 
+  protected KillSwitch $killSwitch;
+
   protected RoadmapPipelineStatusResolver $pipelineStatusResolver;
 
-  public function __construct(Connection $database, RoadmapPipelineStatusResolver $pipeline_status_resolver) {
+  public function __construct(Connection $database, KillSwitch $kill_switch, RoadmapPipelineStatusResolver $pipeline_status_resolver) {
     $this->database = $database;
+    $this->killSwitch = $kill_switch;
     $this->pipelineStatusResolver = $pipeline_status_resolver;
   }
 
   public static function create(ContainerInterface $container): static {
     return new static(
       $container->get('database'),
+      $container->get('page_cache_kill_switch'),
       $container->get('dungeoncrawler_content.roadmap_pipeline_status_resolver')
     );
   }
@@ -43,9 +48,15 @@ class RoadmapController extends ControllerBase {
    * Renders the /roadmap page.
    */
   public function page(): array {
+    // The roadmap reads live release state from filesystem artifacts outside
+    // Drupal's cache-tag graph, so page cache must be bypassed to keep the
+    // release snapshot aligned with the current release cycle.
+    $this->killSwitch->trigger();
+
     // Requirements linked to a feature_id inherit status from the release
     // pipeline automatically. Unlinked requirements still use stored DB status.
     $is_admin = FALSE;
+    $release_snapshot = $this->pipelineStatusResolver->getReleaseCycleSnapshot('dungeoncrawler');
     $backlog_groups = $this->pipelineStatusResolver->getFeatureBacklogGroups('dungeoncrawler');
 
     // Fetch all requirements ordered for grouping.
@@ -134,6 +145,7 @@ class RoadmapController extends ControllerBase {
       '#impl_pct'   => $implemented_pct,
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
+      '#release_snapshot' => $release_snapshot,
       '#backlog_groups' => $backlog_groups,
       '#status_labels' => self::STATUS_LABELS,
       '#attached'   => ['library' => ['dungeoncrawler_content/dungeoncrawler_roadmap']],

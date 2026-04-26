@@ -39,6 +39,11 @@ class RoadmapPipelineStatusResolver {
   private string $featuresPath;
 
   /**
+   * Absolute path to the live release-cycle state directory.
+   */
+  private string $releaseStatePath;
+
+  /**
    * Request-local cache of parsed feature statuses.
    *
    * @var array<string, string|null>
@@ -48,9 +53,13 @@ class RoadmapPipelineStatusResolver {
   /**
    * Constructs the resolver.
    */
-  public function __construct(?string $features_path = NULL) {
+  public function __construct(?string $features_path = NULL, ?string $release_state_path = NULL) {
     $this->featuresPath = rtrim(
-      $features_path ?: Settings::get('dungeoncrawler_pipeline_features_path', '/home/ubuntu/forseti.life/copilot-hq/features'),
+      $features_path ?: Settings::get('dungeoncrawler_pipeline_features_path', '/home/ubuntu/forseti.life/features'),
+      DIRECTORY_SEPARATOR
+    );
+    $this->releaseStatePath = rtrim(
+      $release_state_path ?: Settings::get('dungeoncrawler_pipeline_release_state_path', '/home/ubuntu/forseti.life/tmp/release-cycle-active'),
       DIRECTORY_SEPARATOR
     );
   }
@@ -196,6 +205,80 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+   * Returns the live release-cycle snapshot for the roadmap page.
+   *
+   * @return array<string, mixed>
+   *   Active/next release metadata and feature lists.
+   */
+  public function getReleaseCycleSnapshot(string $website = 'dungeoncrawler'): array {
+    $active_release = $this->readReleaseState("{$website}.release_id");
+    $next_release = $this->readReleaseState("{$website}.next_release_id");
+    $started_at = $this->readReleaseState("{$website}.started_at");
+
+    $snapshot = [
+      'website' => $website,
+      'active_release' => $active_release,
+      'next_release' => $next_release,
+      'started_at' => $started_at,
+      'active_features' => [],
+      'next_features' => [],
+    ];
+
+    if (!is_dir($this->featuresPath) || ($active_release === '' && $next_release === '')) {
+      return $snapshot;
+    }
+
+    $feature_dirs = glob($this->featuresPath . DIRECTORY_SEPARATOR . 'dc-*', GLOB_ONLYDIR) ?: [];
+    sort($feature_dirs);
+
+    foreach ($feature_dirs as $dir) {
+      $feature_id = basename($dir);
+      $feature_path = $dir . DIRECTORY_SEPARATOR . 'feature.md';
+      if (!is_readable($feature_path)) {
+        continue;
+      }
+
+      $contents = file_get_contents($feature_path);
+      if ($contents === FALSE) {
+        continue;
+      }
+
+      $feature_website = mb_strtolower($this->extractFieldValue($contents, 'Website', ''));
+      if ($feature_website !== mb_strtolower($website)) {
+        continue;
+      }
+
+      $release = $this->extractFieldValue($contents, 'Release', '');
+      if ($release !== $active_release && $release !== $next_release) {
+        continue;
+      }
+
+      $status = mb_strtolower($this->extractFieldValue($contents, 'Status', ''));
+      $feature = [
+        'feature_id' => $feature_id,
+        'title' => $this->extractFeatureTitle($contents, $feature_id),
+        'status' => $status,
+        'display_status' => $this->snapshotDisplayStatus($status),
+        'status_label' => $this->snapshotStatusLabel($status),
+        'priority' => $this->extractFieldValue($contents, 'Priority', '-'),
+        'release' => $release,
+      ];
+
+      if ($release === $active_release) {
+        $snapshot['active_features'][] = $feature;
+      }
+      elseif ($release === $next_release) {
+        $snapshot['next_features'][] = $feature;
+      }
+    }
+
+    usort($snapshot['active_features'], fn(array $a, array $b): int => $this->compareSnapshotFeatures($a, $b));
+    usort($snapshot['next_features'], fn(array $a, array $b): int => $this->compareSnapshotFeatures($a, $b));
+
+    return $snapshot;
+  }
+
+  /**
    * Extract markdown field values from "- Label: value" patterns.
    */
   private function extractFieldValue(string $markdown, string $label, string $fallback): string {
@@ -231,6 +314,63 @@ class RoadmapPipelineStatusResolver {
       'P3' => 3,
       default => 9,
     };
+  }
+
+  /**
+   * Reads a release-cycle state file.
+   */
+  private function readReleaseState(string $filename): string {
+    $path = $this->releaseStatePath . DIRECTORY_SEPARATOR . $filename;
+    if (!is_readable($path)) {
+      return '';
+    }
+    $contents = file_get_contents($path);
+    return $contents === FALSE ? '' : trim($contents);
+  }
+
+  /**
+   * Maps raw pipeline status to release-snapshot display state.
+   */
+  private function snapshotDisplayStatus(string $status): string {
+    return match ($status) {
+      'ready' => 'queued',
+      'shipped' => 'implemented',
+      'done' => 'done',
+      default => $status !== '' ? $status : 'pending',
+    };
+  }
+
+  /**
+   * Human label for release snapshot feature statuses.
+   */
+  private function snapshotStatusLabel(string $status): string {
+    return match ($status) {
+      'ready' => 'Queued',
+      'in_progress' => 'In Progress',
+      'done' => 'Done',
+      'shipped' => 'Implemented',
+      'deferred' => 'Deferred',
+      default => $status !== '' ? ucwords(str_replace('_', ' ', $status)) : 'Pending',
+    };
+  }
+
+  /**
+   * Stable sort for release snapshot features.
+   */
+  private function compareSnapshotFeatures(array $a, array $b): int {
+    $status_order = ['in_progress' => 0, 'done' => 1, 'ready' => 2, 'shipped' => 3, 'deferred' => 4];
+    $a_rank = $status_order[$a['status']] ?? 9;
+    $b_rank = $status_order[$b['status']] ?? 9;
+    if ($a_rank !== $b_rank) {
+      return $a_rank <=> $b_rank;
+    }
+
+    $priority_compare = $this->priorityRank($a['priority']) <=> $this->priorityRank($b['priority']);
+    if ($priority_compare !== 0) {
+      return $priority_compare;
+    }
+
+    return strnatcasecmp($a['title'], $b['title']);
   }
 
 }

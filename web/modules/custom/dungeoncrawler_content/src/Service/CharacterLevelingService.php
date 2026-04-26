@@ -816,6 +816,15 @@ class CharacterLevelingService {
       }
     }
 
+    // Halfling Weapon Familiarity prerequisite (e.g. Halfling Weapon Expertise).
+    if (!empty($feat['prerequisite_halfling_weapon_familiarity'])) {
+      if (!$this->characterHasHalflingWeaponFamiliarity($char_data)) {
+        throw new \InvalidArgumentException(
+          "Feat '{$feat_id}' requires Halfling Weapon Familiarity", 400
+        );
+      }
+    }
+
     // Distracting Shadows prerequisite (e.g. Ceaseless Shadows).
     if (!empty($feat['prerequisite_distracting_shadows'])) {
       if (!$this->characterHasDistractingShadows($char_data)) {
@@ -877,6 +886,14 @@ class CharacterLevelingService {
   private function characterHasGoblinWeaponFamiliarity(array $char_data): bool {
     $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
     return in_array('goblin-weapon-familiarity', $owned_ids, TRUE);
+  }
+
+  /**
+   * Returns TRUE if the character has Halfling Weapon Familiarity.
+   */
+  private function characterHasHalflingWeaponFamiliarity(array $char_data): bool {
+    $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
+    return in_array('halfling-weapon-familiarity', $owned_ids, TRUE);
   }
 
   /**

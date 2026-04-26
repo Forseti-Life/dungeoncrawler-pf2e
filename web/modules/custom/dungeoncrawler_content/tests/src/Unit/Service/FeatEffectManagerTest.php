@@ -370,4 +370,61 @@ class FeatEffectManagerTest extends UnitTestCase {
     $this->assertArrayNotHasKey('virtuosic-performer_master_tier_pending', $effects['feat_overrides'] ?? []);
   }
 
+  /**
+   * @covers ::buildEffectState
+   */
+  public function testHalflingWeaponExpertiseCascadesClassWeaponRank(): void {
+    $character = [
+      'feats' => [
+        ['id' => 'halfling-weapon-familiarity'],
+        ['id' => 'halfling-weapon-expertise'],
+      ],
+      'class_features' => [
+        ['id' => 'ranger-weapon-expertise'],
+      ],
+      'level' => 13,
+    ];
+    $effects = $this->manager->buildEffectState($character);
+
+    $halfling_weapons = NULL;
+    foreach ($effects['training_grants']['weapons'] as $weapon_entry) {
+      if (($weapon_entry['group'] ?? '') === 'Halfling Weapons') {
+        $halfling_weapons = $weapon_entry;
+        break;
+      }
+    }
+
+    $this->assertNotNull($halfling_weapons, 'Halfling weapon familiarity should register the halfling weapons group');
+    $this->assertSame('expert', $halfling_weapons['proficiency']);
+    $this->assertSame('expert', $effects['derived_adjustments']['flags']['halfling_weapon_expertise_cascade_rank']);
+    $this->assertContains('halfling-weapon-expertise', $effects['applied_feats']);
+    $this->assertContains('Halfling Weapon Expertise: class weapon expertise also applies to sling, halfling sling staff, shortsword, and trained halfling weapons.', $effects['notes']);
+  }
+
+  /**
+   * @covers ::buildEffectState
+   */
+  public function testHalflingWeaponExpertiseStaysTrainedWithoutClassExpertise(): void {
+    $character = [
+      'feats' => [
+        ['id' => 'halfling-weapon-familiarity'],
+        ['id' => 'halfling-weapon-expertise'],
+      ],
+      'level' => 13,
+    ];
+    $effects = $this->manager->buildEffectState($character);
+
+    $halfling_weapons = NULL;
+    foreach ($effects['training_grants']['weapons'] as $weapon_entry) {
+      if (($weapon_entry['group'] ?? '') === 'Halfling Weapons') {
+        $halfling_weapons = $weapon_entry;
+        break;
+      }
+    }
+
+    $this->assertNotNull($halfling_weapons);
+    $this->assertSame('trained', $halfling_weapons['proficiency']);
+    $this->assertArrayNotHasKey('halfling_weapon_expertise_cascade_rank', $effects['derived_adjustments']['flags']);
+  }
+
 }

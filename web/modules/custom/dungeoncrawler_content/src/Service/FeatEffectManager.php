@@ -1095,6 +1095,25 @@ class FeatEffectManager {
           $effects['applied_feats'][] = $feat_id;
           break;
 
+        case 'halfling-weapon-expertise':
+          $cascade_rank = $this->getClassWeaponExpertiseRank($character_data['class_features'] ?? []);
+          if ($cascade_rank !== '') {
+            foreach ($effects['training_grants']['weapons'] as &$weapon_entry) {
+              if (($weapon_entry['group'] ?? '') === 'Halfling Weapons') {
+                $existing_rank = $weapon_entry['proficiency'] ?? 'trained';
+                $rank_order = ['untrained' => 0, 'trained' => 1, 'expert' => 2, 'master' => 3, 'legendary' => 4];
+                if (($rank_order[$cascade_rank] ?? 0) > ($rank_order[$existing_rank] ?? 0)) {
+                  $weapon_entry['proficiency'] = $cascade_rank;
+                }
+              }
+            }
+            unset($weapon_entry);
+            $effects['derived_adjustments']['flags']['halfling_weapon_expertise_cascade_rank'] = $cascade_rank;
+            $effects['notes'][] = 'Halfling Weapon Expertise: class weapon expertise also applies to sling, halfling sling staff, shortsword, and trained halfling weapons.';
+          }
+          $effects['applied_feats'][] = $feat_id;
+          break;
+
         case 'catfolk-weapon-familiarity':
           $this->addWeaponFamiliarity($effects, 'Catfolk Weapons');
           $effects['applied_feats'][] = $feat_id;
@@ -1879,7 +1898,7 @@ class FeatEffectManager {
   /**
    * Returns the highest weapon proficiency rank granted by class features.
    *
-   * Used by gnome-weapon-expertise to cascade class proficiency upgrades.
+   * Used by ancestry weapon expertise feats to cascade class proficiency upgrades.
    * Returns '' if no expert-or-greater class weapon feature is present.
    *
    * @param array $class_features

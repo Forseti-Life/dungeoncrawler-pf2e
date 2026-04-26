@@ -19,12 +19,19 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
   private string $featuresPath;
 
   /**
+   * Temporary release-state directory.
+   */
+  private string $releaseStatePath;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
     $this->featuresPath = sys_get_temp_dir() . '/dc-roadmap-pipeline-' . uniqid('', TRUE);
+    $this->releaseStatePath = sys_get_temp_dir() . '/dc-roadmap-release-state-' . uniqid('', TRUE);
     mkdir($this->featuresPath, 0777, TRUE);
+    mkdir($this->releaseStatePath, 0777, TRUE);
   }
 
   /**
@@ -32,6 +39,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
    */
   protected function tearDown(): void {
     $this->deleteDirectory($this->featuresPath);
+    $this->deleteDirectory($this->releaseStatePath);
     parent::tearDown();
   }
 
@@ -150,6 +158,58 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $this->assertSame('GMG implementation', $groups[1]['title']);
     $this->assertSame(['queued' => 0, 'in_progress' => 1], $groups[1]['counts']);
     $this->assertSame('in_progress', $groups[1]['features'][0]['display_status']);
+  }
+
+  /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotSurfacesActiveAndNextReleaseFeatures(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.release_id', "20260412-dungeoncrawler-release-s\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-t\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.started_at', "2026-04-20T13:27:41+00:00\n");
+
+    $this->writeFeature(
+      'dc-cr-dwarf-ancestry',
+      'done',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+        'Release' => '20260412-dungeoncrawler-release-s',
+      ],
+      'Feature Brief: Dwarf Ancestry'
+    );
+    $this->writeFeature(
+      'dc-cr-halfling-resolve',
+      'in_progress',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P3',
+        'Release' => '20260412-dungeoncrawler-release-s',
+      ],
+      'Feature Brief: Halfling Resolve'
+    );
+    $this->writeFeature(
+      'dc-cr-elf-heritage-arctic',
+      'ready',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P2',
+        'Release' => '20260412-dungeoncrawler-release-t',
+      ],
+      'Feature Brief: Arctic Elf Heritage'
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('20260412-dungeoncrawler-release-s', $snapshot['active_release']);
+    $this->assertSame('20260412-dungeoncrawler-release-t', $snapshot['next_release']);
+    $this->assertCount(2, $snapshot['active_features']);
+    $this->assertSame('dc-cr-halfling-resolve', $snapshot['active_features'][0]['feature_id']);
+    $this->assertSame('In Progress', $snapshot['active_features'][0]['status_label']);
+    $this->assertCount(1, $snapshot['next_features']);
+    $this->assertSame('dc-cr-elf-heritage-arctic', $snapshot['next_features'][0]['feature_id']);
+    $this->assertSame('Queued', $snapshot['next_features'][0]['status_label']);
   }
 
   /**
